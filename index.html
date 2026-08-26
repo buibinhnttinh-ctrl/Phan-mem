@@ -1,0 +1,634 @@
+HTML
+<!DOCTYPE html><html lang="vi"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHẦN MỀM QUẢN LÝ HỌC SINH TẠI KÝ TÚC XÁ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS Library for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body class="bg-slate-100 font-sans antialiased text-slate-800 min-h-screen pb-12">
+
+    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-100">
+            <div class="text-center mb-6">
+                <div class="inline-flex p-3 bg-indigo-100 text-indigo-600 rounded-full mb-3">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Đăng Nhập Hệ Thống</h2>
+                <p class="text-xs text-slate-500 mt-1">Chọn vai trò để tiếp tục truy cập</p>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Tài khoản</label>
+                    <input type="text" id="username" required placeholder="admin hoặc staff" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Mật khẩu</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div id="loginError" class="hidden text-red-500 text-xs text-center font-medium">
+                    Tài khoản hoặc mật khẩu không chính xác!
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition duration-200 shadow">
+                    Đăng Nhập
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t text-xs text-slate-400">
+                <p class="font-semibold text-slate-600 mb-1">Tài khoản thử nghiệm:</p>
+                <div class="flex justify-between">
+                    <span>Quản trị viên: <b>admin</b> / <b>123</b></span>
+                    <span>Người trực: <b>staff</b> / <b>123</b></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH CHÍNH -->
+    <div id="mainApp" class="hidden">
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white shadow-lg mb-8">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="building-2" class="w-8 h-8"></i>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-wide">Quản Lý Ký Túc Xá</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <div id="userDisplay" class="font-semibold text-sm"></div>
+                        <div id="roleBadge" class="text-xs px-2 py-0.5 rounded-full inline-block font-medium"></div>
+                    </div>
+                    <button onclick="logout()" class="bg-indigo-700 hover:bg-indigo-800 text-white p-2 rounded-lg text-sm transition flex items-center gap-1" title="Đăng xuất">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Thoát</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Container -->
+        <main class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Form Nhập/Sửa Dữ Liệu -->
+            <section class="lg:col-span-4 bg-white p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
+                <h2 id="formTitle" class="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2 border-b pb-3">
+                    <i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i>
+                    Nhập Báo Cáo Trực
+                </h2>
+
+                <form id="dormForm" class="space-y-4">
+                    <input type="hidden" id="editId" value="">
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Ca trực *</label>
+                            <select id="shift" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                                <option value="Sáng">Ca Sáng</option>
+                                <option value="Trưa">Ca Trưa</option>
+                                <option value="Chiều">Ca Chiều</option>
+                                <option value="Tối">Ca Tối</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Ngày trực *</label>
+                            <input type="date" id="date" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-sm font-medium text-slate-600">Họ và tên người trực *</label>
+                            <button type="button" id="changeStaffBtn" onclick="enableStaffEdit()" class="hidden text-xs text-indigo-600 hover:underline font-medium">Đổi người trực</button>
+                        </div>
+                        <input type="text" id="staffName" required placeholder="Nhập tên người trực (chỉ nhập 1 lần/ca)..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Tên phòng *</label>
+                            <input type="text" id="room" required placeholder="A101" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Tổng số *</label>
+                            <input type="number" id="total" min="0" required placeholder="8" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">Vắng *</label>
+                            <input type="number" id="absent" min="0" value="0" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-1">Lí do vắng</label>
+                        <textarea id="reason" rows="2" placeholder="Nhập lý do nếu có học sinh vắng..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition duration-200 shadow flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lưu Thông Tin
+                        </button>
+                        <button type="button" id="cancelBtn" onclick="resetForm()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-lg transition duration-200 flex items-center justify-center">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Bảng Dữ Liệu -->
+            <section class="lg:col-span-8 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2">
+                            <i data-lucide="list" class="w-5 h-5 text-indigo-600"></i>
+                            TỔNG HỢP SỐ LƯỢNG HỌC SINH THEO PHÒNG
+                        </h2>
+                        <p id="subTitleFilter" class="text-xs text-indigo-600 font-medium mt-1"></p>
+                    </div>
+
+                    <!-- Nút Xuất Excel (Chỉ Admin thấy) -->
+                    <button id="exportBtn" onclick="exportToExcel()" class="admin-only hidden bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 shadow flex items-center justify-center gap-2 whitespace-nowrap self-stretch md:self-auto">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Xuất Excel
+                    </button>
+                </div>
+
+                <!-- Khu vực lọc thông minh & Chọn số dòng hiển thị -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">TÌM KIỂM THEO PHÒNG</label>
+                        <div class="relative">
+                            <input type="text" id="searchRoomInput" placeholder="Nhập số phòng (VD: A101)..." class="w-full pl-9 pr-8 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm bg-white">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                            <button id="clearRoomBtn" onclick="clearRoomSearch()" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600" title="Xóa tìm kiếm phòng">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-xs font-semibold text-slate-500">TÌM KIẾM THEO NGÀY TRỰC</label>
+                            <button id="clearDateBtn" onclick="clearDateFilter()" class="hidden text-xs text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-0.5">
+                                <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Xóa ngày
+                            </button>
+                        </div>
+                        <div class="relative">
+                            <input type="date" id="searchDateInput" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-slate-700 bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Lựa chọn số dòng hiển thị -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">HIỂN THỊ SỐ BẢN GHI TRÊN TRANG</label>
+                        <select id="rowsPerPageSelect" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-slate-700 bg-white">
+                            <option value="5">5 dòng</option>
+                            <option value="10" selected>10 dòng</option>
+                            <option value="20">20 dòng</option>
+                            <option value="50">50 dòng</option>
+                            <option value="all">Tất cả</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bảng -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-xs font-semibold uppercase tracking-wider border-b">
+                                <th class="p-3">Phòng</th>
+                                <th class="p-3">Sĩ số</th>
+                                <th class="p-3">Vắng</th>
+                                <th class="p-3">Có mặt</th>
+                                <th class="p-3">Lý do</th>
+                                <th class="p-3">Người trực / Ca</th>
+                                <th class="p-3 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable" class="divide-y divide-slate-100 text-sm"></tbody>
+                    </table>
+                </div>
+
+                <div id="emptyState" class="hidden text-center py-8 text-slate-400">
+                    <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 stroke-1"></i>
+                    <p id="emptyStateText">Không tìm thấy dữ liệu phù hợp.</p>
+                </div>
+
+                <!-- Điều hướng phân trang (Pagination) -->
+                <div id="paginationControls" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 pt-4 border-t text-sm text-slate-600">
+                    <div id="paginationInfo" class="text-xs sm:text-sm text-slate-500"></div>
+                    <div class="flex items-center space-x-2">
+                        <button id="prevPageBtn" onclick="changePage(-1)" class="px-3 py-1.5 border rounded-lg bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs sm:text-sm font-medium">
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i> Trước
+                        </button>
+                        <span id="pageIndicator" class="text-xs sm:text-sm font-bold text-indigo-600 px-2"></span>
+                        <button id="nextPageBtn" onclick="changePage(1)" class="px-3 py-1.5 border rounded-lg bg-white hover:bg-slate-50 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 text-xs sm:text-sm font-medium">
+                            Sau <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        lucide.createIcons();
+        document.getElementById('date').valueAsDate = new Date();
+
+        const USERS = {
+            'admin': { password: '123', name: 'Quản Trị Viên', role: 'admin' },
+            'staff': { password: '123', name: 'Cán Bộ Trực', role: 'staff' }
+        };
+
+        let currentUser = JSON.parse(sessionStorage.getItem('currentUser')) || null;
+        let records = JSON.parse(localStorage.getItem('dormRecords')) || [];
+
+        let currentPage = 1;
+
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+
+        const dormForm = document.getElementById('dormForm');
+        const dataTable = document.getElementById('dataTable');
+        const searchRoomInput = document.getElementById('searchRoomInput');
+        const searchDateInput = document.getElementById('searchDateInput');
+        const rowsPerPageSelect = document.getElementById('rowsPerPageSelect');
+        const clearDateBtn = document.getElementById('clearDateBtn');
+        const clearRoomBtn = document.getElementById('clearRoomBtn');
+        const emptyState = document.getElementById('emptyState');
+        const emptyStateText = document.getElementById('emptyStateText');
+        const editIdInput = document.getElementById('editId');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const formTitle = document.getElementById('formTitle');
+        const shiftSelect = document.getElementById('shift');
+        const dateInput = document.getElementById('date');
+        const staffNameInput = document.getElementById('staffName');
+        const changeStaffBtn = document.getElementById('changeStaffBtn');
+        const subTitleFilter = document.getElementById('subTitleFilter');
+
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+
+        function initApp() {
+            if (currentUser) {
+                loginScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                setupUserInterface();
+                autoFillShiftStaffName();
+                renderTable();
+            } else {
+                loginScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+            }
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const usernameInput = document.getElementById('username').value.trim().toLowerCase();
+            const passwordInput = document.getElementById('password').value;
+
+            const user = USERS[usernameInput];
+            if (user && user.password === passwordInput) {
+                currentUser = { username: usernameInput, name: user.name, role: user.role };
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                loginError.classList.add('hidden');
+                initApp();
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            currentUser = null;
+            initApp();
+        }
+
+        function setupUserInterface() {
+            document.getElementById('userDisplay').innerText = currentUser.name;
+            const roleBadge = document.getElementById('roleBadge');
+
+            if (currentUser.role === 'admin') {
+                roleBadge.innerText = 'Quản trị viên';
+                roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-medium bg-amber-400 text-amber-900';
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+                subTitleFilter.innerText = "• Hiển thị toàn bộ dữ liệu hệ thống";
+            } else {
+                roleBadge.innerText = 'Cán bộ trực';
+                roleBadge.className = 'text-xs px-2 py-0.5 rounded-full inline-block font-medium bg-indigo-500 text-white';
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+            }
+        }
+
+        // Tự động tìm tên người trực đã nhập trước đó trong cùng ca trực + ngày
+        function autoFillShiftStaffName() {
+            if (editIdInput.value) return; // Nếu đang ở chế độ sửa thì bỏ qua
+
+            const currentShift = shiftSelect.value;
+            const currentDate = dateInput.value;
+
+            const existingRecord = records.find(item => item.shift === currentShift && item.date === currentDate);
+
+            if (existingRecord && existingRecord.staffName) {
+                staffNameInput.value = existingRecord.staffName;
+                staffNameInput.readOnly = true;
+                staffNameInput.classList.add('bg-slate-100', 'text-slate-600');
+                changeStaffBtn.classList.remove('hidden');
+            } else {
+                enableStaffEdit();
+            }
+        }
+
+        function enableStaffEdit() {
+            staffNameInput.readOnly = false;
+            staffNameInput.classList.remove('bg-slate-100', 'text-slate-600');
+            changeStaffBtn.classList.add('hidden');
+            if (!editIdInput.value && !staffNameInput.readOnly) {
+                staffNameInput.focus();
+            }
+        }
+
+        function getFilteredRecords() {
+            const roomQuery = searchRoomInput.value.trim().toLowerCase().replace(/\s+/g, '');
+            const searchDateQuery = searchDateInput.value;
+            
+            const currentShift = shiftSelect.value;
+            const currentDate = dateInput.value;
+
+            if (currentUser && currentUser.role === 'staff') {
+                subTitleFilter.innerText = `• Đang hiển thị danh sách thuộc: Ca ${currentShift} (${currentDate})`;
+            }
+
+            return records.filter(item => {
+                const itemRoom = item.room.toLowerCase().replace(/\s+/g, '');
+                const matchRoom = itemRoom.includes(roomQuery);
+                const matchSearchDate = searchDateQuery ? item.date === searchDateQuery : true;
+
+                if (currentUser && currentUser.role === 'staff') {
+                    const matchCurrentShift = item.shift === currentShift;
+                    const matchCurrentDate = item.date === currentDate;
+                    return matchRoom && matchSearchDate && matchCurrentShift && matchCurrentDate;
+                }
+
+                return matchRoom && matchSearchDate;
+            });
+        }
+
+        function renderTable() {
+            dataTable.innerHTML = '';
+            
+            if (searchDateInput.value) clearDateBtn.classList.remove('hidden');
+            else clearDateBtn.classList.add('hidden');
+
+            if (searchRoomInput.value) clearRoomBtn.classList.remove('hidden');
+            else clearRoomBtn.classList.add('hidden');
+
+            const filteredRecords = getFilteredRecords();
+            const totalRecords = filteredRecords.length;
+            const rowsPerPageVal = rowsPerPageSelect.value;
+
+            if (totalRecords === 0) {
+                emptyState.classList.remove('hidden');
+                paginationControls.classList.add('hidden');
+                if (currentUser && currentUser.role === 'staff') {
+                    emptyStateText.innerText = `Chưa có báo cáo nào cho Ca ${shiftSelect.value} ngày ${dateInput.value}`;
+                } else {
+                    emptyStateText.innerText = "Không tìm thấy dữ liệu phù hợp.";
+                }
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            let displayedRecords = filteredRecords;
+            let totalPages = 1;
+
+            if (rowsPerPageVal !== 'all') {
+                const rowsPerPage = parseInt(rowsPerPageVal);
+                totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                const startIndex = (currentPage - 1) * rowsPerPage;
+                const endIndex = startIndex + rowsPerPage;
+                displayedRecords = filteredRecords.slice(startIndex, endIndex);
+
+                paginationControls.classList.remove('hidden');
+                paginationInfo.innerText = `Hiển thị ${startIndex + 1} - ${Math.min(endIndex, totalRecords)} trong tổng số ${totalRecords} bản ghi`;
+                pageIndicator.innerText = `Trang ${currentPage} / ${totalPages}`;
+                
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            } else {
+                paginationControls.classList.remove('hidden');
+                paginationInfo.innerText = `Hiển thị toàn bộ ${totalRecords} bản ghi`;
+                pageIndicator.innerText = `Trang 1 / 1`;
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+            }
+
+            displayedRecords.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                
+                const absentBadge = item.absent > 0 
+                    ? `<span class="bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full text-xs">${item.absent}</span>`
+                    : `<span class="bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full text-xs">0</span>`;
+
+                const presentCount = item.total - item.absent;
+
+                const actionCell = `
+                    <td class="p-3 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editRecord(${item.id})" class="text-amber-600 hover:text-amber-800 hover:bg-amber-50 p-1.5 rounded-lg transition-colors" title="Sửa">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteRecord(${item.id})" class="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors" title="Xóa">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-indigo-600">${item.room}</td>
+                    <td class="p-3 font-medium">${item.total}</td>
+                    <td class="p-3">${absentBadge}</td>
+                    <td class="p-3 font-medium text-slate-700">${presentCount}</td>
+                    <td class="p-3 text-slate-500 max-w-[150px] truncate" title="${item.reason}">${item.reason || '-'}</td>
+                    <td class="p-3">
+                        <div class="font-medium text-slate-700">${item.staffName}</div>
+                        <div class="text-xs text-slate-400">Ca ${item.shift} - ${item.date}</div>
+                    </td>
+                    ${actionCell}
+                `;
+                dataTable.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderTable();
+        }
+
+        rowsPerPageSelect.addEventListener('change', () => {
+            currentPage = 1;
+            renderTable();
+        });
+
+        shiftSelect.addEventListener('change', () => { 
+            currentPage = 1; 
+            autoFillShiftStaffName();
+            renderTable(); 
+        });
+
+        dateInput.addEventListener('change', () => { 
+            currentPage = 1; 
+            autoFillShiftStaffName();
+            renderTable(); 
+        });
+
+        function clearDateFilter() { searchDateInput.value = ''; currentPage = 1; renderTable(); }
+        function clearRoomSearch() { searchRoomInput.value = ''; currentPage = 1; renderTable(); }
+
+        dormForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const editId = editIdInput.value;
+            const staffName = staffNameInput.value.trim();
+            const shift = shiftSelect.value;
+            const date = dateInput.value;
+            const room = document.getElementById('room').value.trim();
+            const total = parseInt(document.getElementById('total').value);
+            const absent = parseInt(document.getElementById('absent').value);
+            const reason = document.getElementById('reason').value.trim();
+
+            if (editId) {
+                const index = records.findIndex(item => item.id == editId);
+                if (index !== -1) {
+                    records[index] = { id: Number(editId), staffName, shift, date, room, total, absent, reason };
+                }
+            } else {
+                const newRecord = { id: Date.now(), staffName, shift, date, room, total, absent, reason };
+                records.unshift(newRecord);
+            }
+
+            // Đồng bộ tên cán bộ cho toàn bộ bản ghi trong cùng Ca và Ngày
+            records.forEach(item => {
+                if (item.shift === shift && item.date === date) {
+                    item.staffName = staffName;
+                }
+            });
+
+            saveAndRender();
+            resetForm();
+        });
+
+        function editRecord(id) {
+            const record = records.find(item => item.id === id);
+            if (!record) return;
+
+            editIdInput.value = record.id;
+            staffNameInput.value = record.staffName;
+            shiftSelect.value = record.shift;
+            dateInput.value = record.date;
+            document.getElementById('room').value = record.room;
+            document.getElementById('total').value = record.total;
+            document.getElementById('absent').value = record.absent;
+            document.getElementById('reason').value = record.reason;
+
+            enableStaffEdit();
+
+            formTitle.innerHTML = `<i data-lucide="pencil" class="w-5 h-5 text-amber-600"></i> Cập Nhật Báo Cáo`;
+            submitBtn.className = "flex-1 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-lg transition duration-200 shadow flex items-center justify-center gap-2";
+            submitBtn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4"></i> Cập Nhật`;
+            cancelBtn.classList.remove('hidden');
+
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            editIdInput.value = '';
+            document.getElementById('room').value = '';
+            document.getElementById('total').value = '';
+            document.getElementById('absent').value = '0';
+            document.getElementById('reason').value = '';
+
+            formTitle.innerHTML = `<i data-lucide="file-plus" class="w-5 h-5 text-indigo-600"></i> Nhập Báo Cáo Trực`;
+            submitBtn.className = "flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition duration-200 shadow flex items-center justify-center gap-2";
+            submitBtn.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> Lưu Thông Tin`;
+            cancelBtn.classList.add('hidden');
+
+            autoFillShiftStaffName();
+            lucide.createIcons();
+        }
+
+        function deleteRecord(id) {
+            if (confirm('Bạn có chắc chắn muốn xóa dòng dữ liệu này?')) {
+                records = records.filter(item => item.id !== id);
+                saveAndRender();
+                if (editIdInput.value == id) resetForm();
+            }
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('dormRecords', JSON.stringify(records));
+            autoFillShiftStaffName();
+            renderTable();
+        }
+
+        searchRoomInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
+        searchDateInput.addEventListener('change', () => { currentPage = 1; renderTable(); });
+
+        function exportToExcel() {
+            if (currentUser.role !== 'admin') return;
+            const exportRecords = getFilteredRecords();
+            if (exportRecords.length === 0) {
+                alert('Không có dữ liệu phù hợp để xuất file Excel!');
+                return;
+            }
+
+            const excelData = exportRecords.map((item, index) => ({
+                "STT": exportRecords.length - index,
+                "Ngày Trực": item.date,
+                "Ca Trực": item.shift,
+                "Người Trực": item.staffName,
+                "Phòng": item.room,
+                "Sĩ Số": item.total,
+                "Vắng": item.absent,
+                "Có Mặt": item.total - item.absent,
+                "Lý Do Vắng": item.reason || ""
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "BaoCaoTrucKTX");
+
+            worksheet['!cols'] = [
+                { wch: 5 }, { wch: 12 }, { wch: 10 }, { wch: 20 }, 
+                { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 30 }
+            ];
+
+            const dateQuery = searchDateInput.value;
+            const fileNameDate = dateQuery || new Date().toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Bao_Cao_Truc_KTX_${fileNameDate}.xlsx`);
+        }
+
+        initApp();
+    </script></body></html>
